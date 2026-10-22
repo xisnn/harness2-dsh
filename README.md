@@ -23,6 +23,29 @@ harness2 run  ──▶  harness tree (systemprompt.md, guardrails.md, skills/, 
 Running Harness² end to end means OpenCode or Codex, a Linux toolchain, and model credentials. If you
 already run DSH, you can keep the part that matters — the *harness it found* — and run it natively.
 
+### Why not just install one of the existing Harness² DSH plugins?
+
+As of 2026-10-22 there are about seven community attempts at "Harness² on DSH", all started within days
+of Harness² itself and all at 0–2 stars. None appears in the official DSH plugin catalog (3,261 entries,
+zero `Harness2` matches), and each falls into one of three shapes:
+
+| Approach | What it does | Why it is not enough on its own |
+|---|---|---|
+| Sidecar Python driver | Reuses Harness²'s own recursion loop, drives `dsh` as the executor | POSIX-only; needs a separate venv and a second install step |
+| In-tree Cordis plugin | Reimplements propose–probe–compose inside DSH | Large surface; the ones published so far ship a demo adapter, not a task executor |
+| **This tool** | **Transports a harness Harness² already found into a DSH preset** | Does not run the search itself — and that is the point |
+
+This project deliberately does **one** thing: it is the missing *transport* step. It does not reimplement
+Harness², does not call a model, and has no opinion about whether a harness is good. That makes it small
+enough to be correct, testable without DSH installed, and usable alongside whichever search approach you
+pick — run Harness² wherever you like, then convert the winner.
+
+It also catches two failure modes that silently produce a broken preset:
+
+- DSH requires kebab-case skill names; Harness² accepts underscores. `ledger_math` is *silently dropped*
+  by DSH. This tool renames it and rewrites the frontmatter to match.
+- DSH does not advertise a skill without a `description:`. This tool synthesises one and tells you.
+
 ## Install
 
 ```bash
