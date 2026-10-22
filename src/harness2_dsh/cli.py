@@ -55,12 +55,12 @@ def _parser() -> argparse.ArgumentParser:
     )
     c.add_argument(
         "--skill-path-mode",
-        choices=("absolute", "dsh-home"),
-        default="absolute",
+        choices=("package", "absolute", "dsh-home"),
+        default="package",
         help=(
-            "absolute: write the resolved skills path into the patch (works anywhere); "
-            "dsh-home: emit dshHomePath(...) (only valid when the bundle is installed "
-            "under $DSH_HOME/profiles/<profile>/)"
+            "package (default): resolve the installed package by name, so the bundle "
+            "can be moved or shared; absolute: bake the resolved path in (this machine "
+            "only); dsh-home: emit dshHomePath(...) (bundle must live under $DSH_HOME)"
         ),
     )
     c.add_argument("--with-subagents", action="store_true", help="convert sub_agents/ into child presets")

@@ -6,6 +6,16 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- **Default `--skill-path-mode` is now `package`.** The generated preset resolves its own bundle by
+  package name through the Loader's `baseUrl`, so a converted bundle contains no machine-specific path
+  and can be committed, copied, or shared. Verified by moving a bundle to a different directory,
+  installing it there, and loading its skill.
+- In the portable modes the persona block describes where helper scripts live relative to the bundle
+  instead of baking in an absolute path.
+- Added `--skill-path-mode absolute` as the explicit opt-in for a fixed path.
+
 ## [0.1.0] - 2026-10-22
 
 ### Added

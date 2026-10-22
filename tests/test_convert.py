@@ -79,8 +79,15 @@ def test_always_on_components_become_one_persona_block(tmp_path):
         assert marker in patch
 
 
-def test_scripts_are_named_with_an_absolute_path(tmp_path):
+def test_scripts_are_named_in_the_persona_block(tmp_path):
     _, out = _convert(tmp_path)
+    patch = (out / "cordis.patch.yml").read_text(encoding="utf-8")
+    assert "# HELPER SCRIPTS" in patch
+    assert "summarize.py" in patch
+
+
+def test_absolute_mode_names_scripts_by_full_path(tmp_path):
+    _, out = _convert(tmp_path, skill_path_mode="absolute")
     patch = (out / "cordis.patch.yml").read_text(encoding="utf-8")
     expected = (out / "scripts").resolve().as_posix()
     assert expected in patch
@@ -90,8 +97,25 @@ def test_skills_are_wired_through_custom_skill_dirs(tmp_path):
     _, out = _convert(tmp_path)
     patch = (out / "cordis.patch.yml").read_text(encoding="utf-8")
     assert "customSkillDirs" in patch
-    assert (out / "skills").resolve().as_posix() in patch
     assert 'name: "@deepseek-ai/dsh-tool-skill"' in patch
+
+
+def test_default_skill_path_mode_resolves_the_package_portably(tmp_path):
+    """The default must not bake in an absolute path: the bundle has to be movable."""
+    _, out = _convert(tmp_path)
+    patch = (out / "cordis.patch.yml").read_text(encoding="utf-8")
+    assert "!!js" in patch
+    assert "createRequire(baseUrl)" in patch
+    assert "dsh-harness2-ledger-recon/package.json" in patch
+    # No absolute path from this machine may leak into the generated patch.
+    assert out.resolve().as_posix() not in patch
+
+
+def test_absolute_skill_path_mode_bakes_the_path(tmp_path):
+    _, out = _convert(tmp_path, skill_path_mode="absolute")
+    patch = (out / "cordis.patch.yml").read_text(encoding="utf-8")
+    assert (out / "skills").resolve().as_posix() in patch
+    assert "createRequire" not in patch
 
 
 def test_no_skills_means_no_skill_rows(tmp_path):

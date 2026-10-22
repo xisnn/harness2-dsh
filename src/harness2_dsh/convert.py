@@ -80,9 +80,16 @@ class Options:
     #: `replace` makes the harness text the whole system prompt (Harness2's
     #: always-on block then stands alone, which is closer to the upstream setup).
     persona_mode: str = "append"
-    #: Emit an absolute `customSkillDirs` path (portable only on this machine) or a
-    #: `!!js dshHomePath(...)` expression when the bundle lives under $DSH_HOME.
-    skill_path_mode: str = "absolute"
+    #: How the preset locates this bundle's `skills/` directory:
+    #:
+    #: * ``package`` (default) — resolve the installed package by name through the
+    #:   profile's own `node_modules`, using the Loader's ``baseUrl``. The bundle
+    #:   can be moved or handed to another machine and still works.
+    #: * ``absolute`` — bake the resolved path in. Simplest, but only valid on the
+    #:   machine that generated it.
+    #: * ``dsh-home`` — emit ``dshHomePath(...)``; only valid when the bundle is
+    #:   installed under ``$DSH_HOME``.
+    skill_path_mode: str = "package"
     with_subagents: bool = False
     with_scripts: bool = True
     install_hint_profile: str = ""
@@ -120,7 +127,11 @@ def normalise_preset_id(raw: str) -> str:
     return folded
 
 
-def _persona_block(harness: harness_tree.Harness, opts: Options, scripts_dir: Path | None) -> str:
+def _persona_block(
+    harness: harness_tree.Harness,
+    opts: Options,
+    scripts_ref: str | None,
+) -> str:
     """Build the always-on text the preset injects.
 
     Harness2's four always-on files become one block, in Harness2's own order, so
@@ -140,12 +151,11 @@ def _persona_block(harness: harness_tree.Harness, opts: Options, scripts_dir: Pa
         label = labels[rel]
         parts.append(f"{label}\n\n{body}" if label else body)
 
-    if scripts_dir is not None and harness.scripts:
+    if scripts_ref is not None and harness.scripts:
         names = ", ".join(f"`{name}`" for name in sorted(harness.scripts))
         parts.append(
             "# HELPER SCRIPTS\n\n"
-            f"Deterministic helpers ship with this preset at `{scripts_dir.resolve().as_posix()}`: "
-            f"{names}.\n"
+            f"Deterministic helpers ship with this preset at {scripts_ref}: {names}.\n"
             "Run them with the shell tool. They are plain Python; read one before relying on it."
         )
 
@@ -257,7 +267,17 @@ def convert(src: Path, out_dir: Path, opts: Options) -> Conversion:
     if scripts_root is not None:
         written.extend(_script_files(harness, scripts_root))
 
-    persona_text = _persona_block(harness, opts, scripts_root)
+    # How the persona text names the helper scripts. In the portable modes the
+    # bundle's own location is not known when the text is composed, so describe
+    # where to look rather than baking in a path that would go stale.
+    if scripts_root is None:
+        scripts_ref = None
+    elif opts.skill_path_mode == "absolute":
+        scripts_ref = scripts_root.resolve().as_posix()
+    else:
+        scripts_ref = f"`{pkg_name}` package, `scripts/` subdirectory"
+
+    persona_text = _persona_block(harness, opts, scripts_ref)
 
     # ── preset plugin rows ────────────────────────────────────────────────────
     plugins: list[dict] = [
@@ -278,8 +298,15 @@ def convert(src: Path, out_dir: Path, opts: Options) -> Conversion:
             skills_value = yaml_emit.JsExpression(
                 f"dshHomePath('{_dsh_home_rel(bundle_dir, skills_root)}')"
             )
-        else:
+        elif opts.skill_path_mode == "package":
+            skills_value = yaml_emit.JsExpression(_package_resolve_expression(pkg_name))
+        elif opts.skill_path_mode == "absolute":
             skills_value = skills_root.resolve().as_posix()
+        else:
+            raise ValueError(
+                f"unknown skill_path_mode {opts.skill_path_mode!r}; "
+                "expected package, absolute or dsh-home"
+            )
         plugins.append(
             {
                 "id": "skill-filesystem",
@@ -385,6 +412,25 @@ def _dsh_home_rel(bundle_dir: Path, skills_root: Path) -> str:
         idx = parts.index("profiles")
         return "/".join(parts[idx + 2 :] + [skills_root.name])
     return skills_root.name
+
+
+def _package_resolve_expression(pkg_name: str) -> str:
+    """A Loader expression that finds this bundle's `skills/` by package name.
+
+    The Loader evaluates `!!js` scalars in the profile context, where `baseUrl` is
+    the profile directory's URL. Resolving the bundle's own package.json from there
+    asks Node's resolver to find the installed package wherever the package manager
+    actually put it, so the result survives moving the bundle to another machine.
+
+    This mirrors what the shipped `standard` preset does for its bundled skills.
+    """
+    return (
+        "process.getBuiltinModule('node:path').join("
+        "process.getBuiltinModule('node:path').dirname("
+        "process.getBuiltinModule('node:module')"
+        f".createRequire(baseUrl).resolve('{pkg_name}/package.json')"
+        "), 'skills')"
+    )
 
 
 def _default_description(harness: harness_tree.Harness) -> str:

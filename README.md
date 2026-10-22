@@ -90,7 +90,7 @@ dsh plugin --profile web add ./bundles/ledger-recon
 | `--description` | generated | preset description |
 | `--order` | `50` | roster position |
 | `--persona-mode` | `append` | `append` keeps DSH's own system prompt and adds the harness text; `replace` makes the harness text the whole system prompt |
-| `--skill-path-mode` | `absolute` | `absolute` bakes the resolved skills path; `dsh-home` emits `dshHomePath(...)` for bundles installed under `$DSH_HOME` |
+| `--skill-path-mode` | `package` | `package` resolves the installed bundle by name, so the bundle stays portable; `absolute` bakes the resolved path (this machine only); `dsh-home` emits `dshHomePath(...)` for bundles under `$DSH_HOME` |
 | `--with-subagents` | off | convert `sub_agents/` into child presets |
 | `--no-scripts` | off | skip `scripts/` |
 | `--profile` | `web` | profile named in the generated install hint |
@@ -101,9 +101,35 @@ dsh plugin --profile web add ./bundles/ledger-recon
 |---|---|
 | `systemprompt.md`, `guardrails.md`, `LongTermMEMORY.md`, `tool_descriptions/tool_guidance.md` | one always-on block in the preset's `dsh-persona` prefix, in Harness²'s own order |
 | `skills/<n>/SKILL.md` + `skills/<n>/scripts/` | real DSH skills under the bundle, wired through `dsh-skill-filesystem.customSkillDirs` |
-| `scripts/<n>.py` | copied into the bundle; the persona block names the absolute path |
+| `scripts/<n>.py` | copied into the bundle; the persona block names where they live |
 | `sub_agents/<n>/AGENT.md` | a child agent preset plus a `dsh-tool-subagent` row (opt-in) |
 | `plugin/<n>.ts` | **not converted** — OpenCode plugin modules are not Cordis plugins. Reported, never silently dropped |
+
+### Portable by default
+
+A converted bundle contains **no machine-specific paths**, so you can commit it, hand it to a colleague,
+or download someone else's. The preset locates its skills by asking the Loader to resolve the bundle's own
+package name from the profile's `node_modules`:
+
+```yaml
+customSkillDirs:
+  - !!js process.getBuiltinModule('node:path').join(
+      process.getBuiltinModule('node:path').dirname(
+        process.getBuiltinModule('node:module').createRequire(baseUrl)
+          .resolve('dsh-harness2-<preset-id>/package.json')),
+      'skills')
+```
+
+This is the same mechanism the shipped `standard` preset uses for its bundled skills. It was verified by
+moving a generated bundle to a different directory, installing it there, and loading its skill.
+
+Use `--skill-path-mode absolute` only when you want a fixed path (single-machine use, or the bundle lives
+somewhere the package resolver cannot see). `--skill-path-mode dsh-home` remains available for bundles
+installed under `$DSH_HOME`.
+
+> Note: `dsh-agent-preset` needs the `agentPresets` service, which the **web** profile provides and the
+> **headless** profile does not. A converted preset is selectable in the Web UI; a headless one-shot run
+> cannot mount it. Plan verification accordingly.
 
 ### Two normalisations worth knowing
 
@@ -138,9 +164,9 @@ network.
 - One-way. Converting back from a preset to a Harness² tree is not implemented, because a preset is a
   composition, not a file tree.
 - `plugin/*.ts` has no automatic equivalent; porting is manual.
-- The generated bundle is bound to the machine that produced it when `--skill-path-mode absolute` is
-  used, because the skills path is absolute. Use `dsh-home` (or regenerate after moving the bundle) when
-  you need it relocatable.
+- `--skill-path-mode absolute` binds the bundle to the machine that produced it. The default `package`
+  mode avoids that, but it needs the bundle installed through the package manager (a plain copy into
+  `node_modules` by hand will still resolve, as long as the package name is findable).
 - The converter does not run Harness² and does not evaluate whether the harness is any good. It only
   transports what Harness² produced.
 
