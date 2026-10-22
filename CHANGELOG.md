@@ -29,5 +29,5 @@ All notable changes to this project are documented here. The format follows
 - 72 tests covering the emitter, tree parsing, every conversion path, input resolution, and
   the CLI. No network and no DSH installation required.
 
-[Unreleased]: https://github.com/example/harness2-dsh/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/example/harness2-dsh/releases/tag/v0.1.0
+[Unreleased]: https://github.com/xisnn/harness2-dsh/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/xisnn/harness2-dsh/releases/tag/v0.1.0
