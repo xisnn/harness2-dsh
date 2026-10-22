@@ -1,0 +1,45 @@
+[build-system]
+requires = ["setuptools>=77", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "harness2-dsh"
+version = "0.1.0"
+description = "Convert a Google Research Harness2 harness tree into a DeepSeek Harness (DSH) agent-preset bundle"
+readme = "README.md"
+license = "Apache-2.0"
+requires-python = ">=3.10"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+    "Topic :: Software Development :: Code Generators",
+]
+authors = [{ name = "harness2-dsh contributors" }]
+keywords = ["harness2", "deepseek-harness", "dsh", "agent-preset", "cordis"]
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.6"]
+
+[project.scripts]
+harness2-dsh = "harness2_dsh.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/example/harness2-dsh"
+Issues = "https://github.com/example/harness2-dsh/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# On some Windows Python installs tempfile.gettempdir() falls back to the current
+# directory, which would scatter `pytest-of-*` beside the source. Pin the root.
+addopts = "--basetemp=.pytest-tmp"

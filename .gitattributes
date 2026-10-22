@@ -1,0 +1,5 @@
+* text=auto eol=lf
+
+# Generated bundles and test scratch output are never committed.
+pytest-of-*/ -text
+.pytest-tmp/ -text

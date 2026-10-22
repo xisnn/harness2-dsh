@@ -1,0 +1,28 @@
+# Byte-compiled / caches
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+
+# Test and tool caches
+.pytest_cache/
+.ruff_cache/
+# pytest's tmp_path root, when TMPDIR resolves beside the source tree
+pytest-of-*/
+.pytest-tmp/
+.coverage
+htmlcov/
+
+# Generated bundles: these are build output, not source
+/bundles/
+/out/
+
+# Editors and OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

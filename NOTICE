@@ -1,0 +1,20 @@
+# NOTICE
+
+harness2-dsh
+Copyright 2026 harness2-dsh contributors
+
+This product includes software and text derived from Harness², developed by
+Google LLC and licensed under the Apache License, Version 2.0:
+
+    Harness²: Recursive Agent Harnessing for an Open World
+    https://github.com/google-research/harness2
+    Copyright 2026 Google LLC
+
+The component names, the always-on file layout (`systemprompt.md`, `guardrails.md`,
+`LongTermMEMORY.md`, `tool_descriptions/tool_guidance.md`), the skill and subagent
+directory conventions, and the skill-name rules implemented here follow that project.
+Generated bundles contain text derived from a Harness² harness tree.
+
+Harness² is not an officially supported Google product. This project is an independent
+community tool and is not affiliated with, endorsed by, or sponsored by Google LLC or
+DeepSeek.
