@@ -8,6 +8,11 @@ dist/
 .venv/
 venv/
 
+# PEP 517 build isolation scratch, left behind when a build is interrupted
+build-env-*/
+pip-*/
+build-requirements-*.txt
+
 # Test and tool caches
 .pytest_cache/
 .ruff_cache/
